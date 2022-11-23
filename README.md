@@ -1,2 +1,2 @@
 # docker
-Learn about docker
+Learn about docker-compose
