@@ -1,0 +1,52 @@
+sudo apt-get update
+sudo apt install docker.io -y
+sudo systemctl start docker
+sudo systemctl enable docker
+git clone https://github.com/Mirantis/cri-dockerd.git
+sudo apt-get install wget unzip -y
+
+go to the link https://go.dev/doc/install to download golang
+
+wget https://go.dev/dl/go1.19.3.linux-amd64.tar.gz
+
+sudo tar -C /usr/local -xzf go1.19.3.linux-amd64.tar.gz
+
+echo "export PATH=$PATH:/usr/local/go/bin" >> ~/.profile
+
+source ~/.profile
+
+go version
+
+cd cri-dockerd
+
+mkdir bin
+
+go build -o bin/cri-dockerd
+
+mkdir -p /usr/local/bin
+
+sudo install -o root -g root -m 0755 bin/cri-dockerd /usr/local/bin/cri-dockerd
+
+sudo cp -a packaging/systemd/* /etc/systemd/system
+
+sudo sed -i -e 's,/usr/bin/cri-dockerd,/usr/local/bin/cri-dockerd,' /etc/systemd/system/cri-docker.service
+
+sudo systemctl daemon-reload
+
+sudo systemctl enable cri-docker.service
+
+sudo systemctl enable --now cri-docker.socket
+
+sudo apt-get update
+
+sudo apt-get install -y apt-transport-https ca-certificates curl
+
+sudo curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
+
+echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+
+sudo apt-get update
+
+sudo apt-get install -y kubelet kubeadm kubectl
+
+sudo kubeadm join 10.0.2.15:6443 --token fdi5cf.51v41vsqzkwodqkt --discovery-token-ca-cert-hash sha256:10f2acb7a19e5086882434f17f71d50169c1ce76bce5685219dc9a252cfb5c05 --cri-socket=unix:///var/run/cri-dockerd.sock
